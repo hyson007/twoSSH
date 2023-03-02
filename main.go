@@ -137,7 +137,16 @@ func runCommand(session *ssh.Session, command string, output chan string) {
 	log.Println("running command: ", command)
 	result, err := session.CombinedOutput(command)
 	if err != nil {
-		log.Println("error running command: ", err)
+		if exitErr, ok := err.(*ssh.ExitError); ok {
+			// The command failed and exited with a non-zero exit status code.
+			status := exitErr.ExitStatus()
+			if status != 124 {
+				fmt.Printf("Command execution failed with status code %d\n", status)
+			}
+		} else {
+			// There was an error executing the command.
+			fmt.Printf("Command execution failed: %v\n", err)
+		}
 	}
 	output <- string(result)
 }
